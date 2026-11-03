@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>블로그 월간 플래너</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --page:#F6F6F4; --board:#E9E9E6; --cell-line:#DADAD6; --ink:#262624; --ink-2:#6B6B66; --ink-3:#A3A39D;
+  --panel:#FFFFFF; --line:#D9D9D4; --ok:#3E7A12; --bad:#B3261E; --warn:#9A5B00; --drop:#D6E4F5; --focus:#2D6BC4;
+  --trend:#7DBB2E; --trend-ink:#FFFFFF; --people:#F4A21A; --people-ink:#3B2300;
+  --media:#2F5422; --media-ink:#FFFFFF; --about:#F2A3CC; --about-ink:#4D1532; --data:#2F7BD9; --data-ink:#FFFFFF;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#1B1B1A; --board:#262624; --cell-line:#34342F; --ink:#EDEDE8; --ink-2:#A9A9A2; --ink-3:#6E6E68;
+    --panel:#2A2A27; --line:#3B3B36; --ok:#8CCB55; --bad:#F2867E; --warn:#E8B054; --drop:#24364F; --focus:#7FB0F0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --page:#1B1B1A; --board:#262624; --cell-line:#34342F; --ink:#EDEDE8; --ink-2:#A9A9A2; --ink-3:#6E6E68;
+  --panel:#2A2A27; --line:#3B3B36; --ok:#8CCB55; --bad:#F2867E; --warn:#E8B054; --drop:#24364F; --focus:#7FB0F0;
+  color-scheme: dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--page);color:var(--ink);font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;font-size:15px;line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto;padding:20px 16px 48px;position:relative;user-select:none}
+button,select,input{font:inherit;color:inherit}
+button{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer}
+button:hover{border-color:var(--ink-3)}
+button:focus-visible,select:focus-visible,input:focus-visible,.it:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.month{display:flex;align-items:center;gap:6px}
+.month h1{font-size:26px;font-weight:600;margin:0 6px;letter-spacing:-0.01em;min-width:150px;text-align:center}
+.month button{width:36px;height:36px;padding:0;font-size:18px;line-height:1}
+#monthPick{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 8px}
+#saveState{margin-left:auto;font-size:13px;color:var(--ink-2)}
+.m{display:flex;align-items:baseline;gap:6px;font-size:14px}
+.dot{width:11px;height:11px;border-radius:50%;display:inline-block;transform:translateY(1px)}
+.m b{font-size:22px;font-weight:600}
+.m .g{color:var(--ink-3)}
+.m .s{font-size:12px}
+#warn{font-size:13px;margin:0 0 12px;min-height:20px}
+.board{background:var(--board);border-radius:14px;padding:10px 10px 6px}
+.wd,.grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
+.wd span{text-align:center;font-size:15px;padding:2px 0 8px;color:var(--ink)}
+.cell{min-height:132px;border-top:1px solid var(--cell-line);padding:6px 4px 10px;position:relative;display:flex;flex-wrap:wrap;justify-content:center;align-content:flex-start;gap:4px 6px}
+.cell.out .dl{opacity:.35}
+.cell.over{background:var(--drop);border-radius:10px}
+.dl{position:absolute;top:5px;left:8px;font-size:12px;color:var(--ink-2)}
+.it{display:flex;flex-direction:column;align-items:center;width:112px;max-width:100%;cursor:grab;touch-action:none;margin-top:16px;border-radius:12px}
+.ci{width:60px;height:60px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;font-weight:600;line-height:1.15}
+.ci small{font-size:11px;font-weight:500;opacity:.9}
+.tt{font-size:12.5px;color:var(--ink-2);text-align:center;line-height:1.3;margin-top:4px;word-break:keep-all;overflow-wrap:anywhere}
+.memo{font-size:12.5px;font-weight:600;color:var(--ink-2);margin-top:18px;cursor:grab;touch-action:none;text-align:center;padding:2px 6px;border-radius:6px;word-break:keep-all}
+.sel .ci{box-shadow:0 0 0 3px var(--page),0 0 0 5px var(--focus)}
+.memo.sel{outline:2px solid var(--focus)}
+.bad .ci{box-shadow:0 0 0 3px var(--page),0 0 0 5px var(--bad)}
+.lower{display:block;margin-top:16px;max-width:520px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.panel h2{font-size:15px;font-weight:600;margin:0 0 8px}
+.adds{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.adds button{display:flex;align-items:center;gap:6px;font-size:13px}
+.palette{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:0 0 12px}
+.palette .lab{font-size:13px;color:var(--ink-2);margin-right:2px}
+.pc{display:flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:50%;font-size:12.5px;font-weight:600;cursor:grab;touch-action:none;border:none;padding:0}
+.pm{font-size:13px;font-weight:600;color:var(--ink-2);background:var(--board);border:1px dashed var(--ink-3);border-radius:8px;padding:6px 12px;cursor:grab;touch-action:none}
+#edit .hint{font-size:13px;color:var(--ink-3);margin:0}
+#edit label{display:block;font-size:12px;color:var(--ink-2);margin:8px 0 4px}
+#edit input,#edit select{width:100%;border:1px solid var(--line);background:var(--page);border-radius:8px;padding:8px 10px}
+.row{display:flex;gap:8px;margin-top:10px}
+.danger{color:var(--bad)}
+#exportBox{width:100%;min-height:150px;margin-top:8px;border:1px solid var(--line);background:var(--page);border-radius:8px;padding:8px;font:13px/1.5 "IBM Plex Sans KR",system-ui,sans-serif;color:var(--ink);resize:vertical}
+.it,.memo{position:relative}
+.x{position:absolute;top:-6px;right:calc(50% - 40px);width:22px;height:22px;border-radius:50%;padding:0;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;background:var(--panel);color:var(--bad);border:1px solid var(--line);z-index:3}
+.tt{cursor:text}
+.ti-in{width:100%;max-width:140px;font-size:12.5px;text-align:center;border:1px solid var(--focus);border-radius:6px;padding:3px 4px;background:var(--panel);color:var(--ink);margin-top:4px;user-select:text}
+.ghost{position:absolute;pointer-events:none;opacity:.85;z-index:20;margin:0}
+@media (max-width:720px){
+  .lower{grid-template-columns:1fr}
+  .cell{min-height:104px;padding:4px 1px 8px}
+  .it{width:100%}
+  .ci{width:44px;height:44px;font-size:10.5px}
+  .pc{width:44px;height:44px;font-size:10.5px}
+  .ci small{display:none}
+  .tt,.memo{font-size:11px}
+  .month h1{font-size:21px;min-width:120px}
+  .dl{left:4px;font-size:11px}
+}
+@media (prefers-reduced-motion:no-preference){.it,.memo{transition:transform .12s}}
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <header>
+    <div class="month">
+      <button id="prev" aria-label="이전 달">‹</button>
+      <h1 id="title"></h1>
+      <button id="next" aria-label="다음 달">›</button>
+    </div>
+    <select id="monthPick" aria-label="플랜이 있는 달로 이동"></select>
+    <span id="saveState" aria-live="polite">불러오는 중</span>
+  </header>
+  <div class="palette" id="palette" aria-label="새 항목: 달력으로 끌어다 놓기">
+    <span class="lab">끌어다 놓기</span>
+    <button class="pc" data-new="Trend" style="background:var(--trend);color:var(--trend-ink)">Trend</button>
+    <button class="pc" data-new="People" style="background:var(--people);color:var(--people-ink)">People</button>
+    <button class="pc" data-new="Media" style="background:var(--media);color:var(--media-ink)">Media</button>
+    <button class="pc" data-new="About" style="background:var(--about);color:var(--about-ink)">About</button>
+    <button class="pc" data-new="Data" style="background:var(--data);color:var(--data-ink)">Data</button>
+    <button class="pm" data-new="Memo">메모</button>
+  </div>
+  <div id="warn" aria-live="polite"></div>
+  <div class="board">
+    <div class="wd"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span></div>
+    <div class="grid" id="grid"></div>
+  </div>
+  <div class="lower">
+    <div class="panel">
+      <h2>노션 등록용 목록</h2>
+      <div class="row" style="margin-top:0"><button id="exportBtn">목록 보기</button></div>
+      <textarea id="exportBox" hidden readonly aria-label="노션 등록용 목록"></textarea>
+    </div>
+    <div class="panel" style="margin-top:12px">
+      <h2>모두에게 반영하기</h2>
+      <p class="hint" style="font-size:13px;color:var(--ink-2);margin:0 0 8px">옮긴 내용은 이 브라우저에만 임시 저장돼요. 다른 사람에게도 보이게 하려면 파일을 받아 저장소의 data 폴더에 덮어쓰고 올리세요.</p>
+      <div class="row" style="margin-top:0"><button id="saveBtn">저장 파일 받기 (months.json)</button><button id="clearBtn">내 변경 지우기</button></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+const CATS={Trend:{v:'--trend',ink:'--trend-ink',goal:5},People:{v:'--people',ink:'--people-ink',goal:2},Media:{v:'--media',ink:'--media-ink',goal:1},About:{v:'--about',ink:'--about-ink',goal:2},Data:{v:'--data',ink:'--data-ink',goal:null}};
+const ORDER=['Trend','People','Media','About','Data'];
+const $=id=>document.getElementById(id);
+const today=new Date();
+let ym=(()=>{const d=new Date(today.getFullYear(),today.getMonth(),1);return key(d.getFullYear(),d.getMonth()+1)})();
+let items=[];let known=new Set();let sel=null;
+let db=null,unsubMonth=null,lastSaved='',saveTimer=null,mode='loading';
+function key(y,m){return y+'-'+String(m).padStart(2,'0')}
+function parse(k){const[y,m]=k.split('-').map(Number);return{y,m}}
+function uid(){return 'i'+Math.random().toString(36).slice(2,9)}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+function weekdays(k){const{y,m}=parse(k);const first=new Date(y,m-1,1);const last=new Date(y,m,0);const fw=first.getDay();const d=fw===0?new Date(y,m-1,2):fw===6?new Date(y,m-1,3):new Date(y,m-1,1-(fw-1));const out=[];
+  while(d<=last||out.length%5){const w=d.getDay();if(w>0&&w<6)out.push({day:d.getMonth()===m-1?d.getDate():null,label:(d.getMonth()+1)+'/'+d.getDate()});d.setDate(d.getDate()+1)}
+  return out}
+
+function buildGrid(){const{y,m}=parse(ym);$('title').textContent=y+'년 '+m+'월';
+  $('grid').innerHTML=weekdays(ym).map(c=>c.day?`<div class="cell" data-d="${c.day}"><span class="dl">${c.label}</span></div>`:`<div class="cell out"><span class="dl">${c.label}</span></div>`).join('');}
+
+function badIds(){return new Set()}
+
+function node(i,bad){const e=document.createElement('div');e.dataset.id=i.id;e.tabIndex=0;
+  const xb=()=>{const b=document.createElement('button');b.className='x';b.setAttribute('aria-label','삭제');b.textContent='×';b.onclick=ev=>{ev.stopPropagation();removeItem(i.id)};return b};
+  if(i.c==='Memo'){e.className='memo'+(sel===i.id?' sel':'');e.textContent=i.t||'메모';if(sel===i.id)e.appendChild(xb());return e}
+  const c=CATS[i.c]||CATS.Trend;const{m}=parse(ym);
+  e.className='it'+(sel===i.id?' sel':'')+(bad.has(i.id)?' bad':'');
+  e.innerHTML=`<div class="ci" style="background:var(${c.v});color:var(${c.ink})">${i.day?`<small>${m}/${i.day}</small>`:''}${i.c}</div><div class="tt"></div>`;
+  e.querySelector('.tt').textContent=i.t||'새 글';e.setAttribute('aria-label',`${i.c} ${i.t||''}`);if(sel===i.id)e.appendChild(xb());return e}
+function removeItem(id){items=items.filter(x=>x.id!==id);if(sel===id)sel=null;render();queueSave()}
+function editTitle(i){const el=document.querySelector(`[data-id="${i.id}"]`);if(!el)return;const memo=i.c==='Memo';
+  const inp=document.createElement('input');inp.className='ti-in';inp.maxLength=80;inp.value=i.t&&!['새 글','새 메모'].includes(i.t)?i.t:'';inp.setAttribute('aria-label','제목');
+  if(memo){el.textContent='';el.appendChild(inp)}else{const t=el.querySelector('.tt');t.replaceWith(inp)}
+  let done=false;const fin=ok=>{if(done)return;done=true;if(ok){const v=inp.value.trim();i.t=v||(memo?'새 메모':'새 글');queueSave()}render()};
+  inp.addEventListener('keydown',ev=>{ev.stopPropagation();if(ev.key==='Enter'){ev.preventDefault();fin(true)}else if(ev.key==='Escape'){fin(false)}});
+  inp.addEventListener('blur',()=>fin(true));inp.focus();inp.select()}
+
+function render(){const bad=badIds();
+  document.querySelectorAll('[data-id]').forEach(x=>x.remove());
+  items.forEach(i=>{const c=i.day&&$('grid').querySelector(`[data-d="${i.day}"]`);if(c)c.appendChild(node(i,bad))});
+  const tot=items.filter(i=>i.c!=='Memo'&&i.day).length;
+  $('warn').innerHTML='';
+  renderPick();if(!$('exportBox').hidden)fillExport();}
+
+function renderPick(){const ks=new Set(known);ks.add(ym);const list=[...ks].sort();
+  $('monthPick').innerHTML=list.map(k=>{const{y,m}=parse(k);return `<option value="${k}" ${k===ym?'selected':''}>${y}년 ${m}월</option>`}).join('');}
+
+function fillExport(){const{y,m}=parse(ym);const rows=items.filter(i=>i.day).sort((a,b)=>a.day-b.day||(a.c==='Memo')-(b.c==='Memo'));
+  $('exportBox').value=`${y}년 ${m}월 블로그 플랜\n`+rows.map(i=>`${m}/${i.day}\t${i.c==='Memo'?'메모':i.c}\t${i.t||''}`).join('\n');}
+
+function setState(t){$('saveState').textContent=t}
+function snapshotJSON(){return JSON.stringify(items.map(({id,c,t,day})=>({id,c,t:t||'',day:day||null})))}
+function queueSave(){clearTimeout(saveTimer);setState('저장 중…');saveTimer=setTimeout(save,700)}
+async function save(){const json=snapshotJSON();if(json===lastSaved){setState(mode==='db'?'저장됨':'이 브라우저에 임시 저장됨');return}
+  if(mode==='db'){try{await db.collection('months').doc(ym).set({items:JSON.parse(json),updatedAt:new Date().toISOString()});lastSaved=json;setState('저장됨')}
+    catch(e){setState(e&&e.code==='not_granted'?'보기 전용이라 저장되지 않아요':'저장하지 못했어요. 잠시 후 다시 옮겨 보세요.')}}
+  else{try{localStorage.setItem('plan2:'+ym,JSON.stringify({base:base.version,items:JSON.parse(json)}));lastSaved=json;setState('이 브라우저에 임시 저장됨')}catch(e){setState('저장되지 않는 환경이에요')}}}
+
+let base={version:'',months:{}};
+function localEntry(k){try{const v=JSON.parse(localStorage.getItem('plan2:'+k));return v&&v.base===base.version&&Array.isArray(v.items)?v:null}catch(e){return null}}
+function monthItems(k){const l=localEntry(k);if(l)return l.items;return (base.months[k]||[]).map(x=>({...x}))}
+function loadLocal(){items=monthItems(ym);lastSaved=snapshotJSON();
+  Object.keys(base.months).forEach(k=>{if((base.months[k]||[]).length)known.add(k)});
+  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('plan2:')){const e=localEntry(k.slice(6));if(e&&e.items.length)known.add(k.slice(6))}}}catch(e){}}
+function exportAll(){const keys=new Set(Object.keys(base.months));try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('plan2:'))keys.add(k.slice(6))}}catch(e){}
+  const months={};[...keys].sort().forEach(k=>{const it=k===ym?items:monthItems(k);if(it.length)months[k]=it.map(({id,c,t,day})=>({id,c,t:t||'',day:day||null}))});
+  return JSON.stringify({version:new Date().toISOString(),months},null,1)}
+function downloadData(){const b=new Blob([exportAll()],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='months.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function clearLocal(){try{Object.keys(localStorage).filter(k=>k.startsWith('plan2:')).forEach(k=>localStorage.removeItem(k))}catch(e){}location.reload()}
+
+function openMonth(k){clearTimeout(saveTimer);if(snapshotJSON()!==lastSaved)save();ym=k;sel=null;items=[];buildGrid();
+  if(mode==='db'){if(unsubMonth)unsubMonth();setState('불러오는 중');
+    unsubMonth=db.collection('months').doc(ym).onSnapshot(s=>{const d=s.exists?s.data():null;const incoming=JSON.stringify((d&&Array.isArray(d.items)?d.items:[]).map(({id,c,t,day})=>({id,c,t:t||'',day:day||null})));
+      if(incoming===snapshotJSON()&&lastSaved){setState('저장됨');return}
+      if(drag||(document.activeElement&&document.activeElement.classList.contains('ti-in')))return;
+      items=JSON.parse(incoming);lastSaved=incoming;if(!items.find(x=>x.id===sel))sel=null;render();setState('저장됨')},
+      ()=>{setState('불러오지 못했어요')});}
+  else{loadLocal();setState(mode==='local'?'저장소 일정 불러옴':'불러오는 중')}
+  render();}
+
+$('prev').onclick=()=>{const{y,m}=parse(ym);const d=new Date(y,m-2,1);openMonth(key(d.getFullYear(),d.getMonth()+1))};
+$('next').onclick=()=>{const{y,m}=parse(ym);const d=new Date(y,m,1);openMonth(key(d.getFullYear(),d.getMonth()+1))};
+$('monthPick').onchange=e=>openMonth(e.target.value);
+function addAt(c,day){const it={id:uid(),c,t:c==='Memo'?'새 메모':'새 글',day};items.push(it);known.add(ym);render();queueSave()}
+function firstWeekday(){const{y,m}=parse(ym);for(let d=1;d<=7;d++){const w=new Date(y,m-1,d).getDay();if(w>0&&w<6)return d}return 1}
+document.querySelectorAll('[data-new]').forEach(b=>{b.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();addAt(b.dataset.new,firstWeekday())}})});
+$('exportBtn').onclick=()=>{const b=$('exportBox');b.hidden=!b.hidden;$('exportBtn').textContent=b.hidden?'목록 보기':'목록 닫기';if(!b.hidden){fillExport();b.focus();b.select()}};
+
+const wrap=$('wrap');let drag=null;
+wrap.addEventListener('pointerdown',e=>{if(e.target.closest('.ti-in,.x'))return;const ae=document.activeElement;if(ae&&ae.classList.contains('ti-in'))ae.blur();const el=e.target.closest('[data-id],[data-new]');if(!el||e.button>0)return;e.preventDefault();
+  const r=wrap.getBoundingClientRect(),er=el.getBoundingClientRect();const g=el.cloneNode(true);g.classList.add('ghost');g.style.width=er.width+'px';g.style.left=(er.left-r.left)+'px';g.style.top=(er.top-r.top)+'px';
+  drag={id:el.dataset.id,nw:el.dataset.new,onTitle:!!e.target.closest('.tt')||el.classList.contains('memo'),g,x0:e.clientX,y0:e.clientY,ox:e.clientX-er.left,oy:e.clientY-er.top,moved:false,last:null}});
+document.addEventListener('pointermove',e=>{if(!drag)return;if(!drag.moved&&Math.hypot(e.clientX-drag.x0,e.clientY-drag.y0)<5)return;
+  if(!drag.moved){drag.moved=true;wrap.appendChild(drag.g)}const r=wrap.getBoundingClientRect();drag.g.style.left=(e.clientX-r.left-drag.ox)+'px';drag.g.style.top=(e.clientY-r.top-drag.oy)+'px';
+  const c=document.elementFromPoint(e.clientX,e.clientY);const t=c&&c.closest('.cell[data-d]');if(drag.last&&drag.last!==t)drag.last.classList.remove('over');if(t){t.classList.add('over');drag.last=t}});
+function endDrag(e){if(!drag)return;const d=drag;drag=null;d.g.remove();if(d.last)d.last.classList.remove('over');
+  const c=e&&document.elementFromPoint(e.clientX,e.clientY);const t=c&&c.closest('.cell[data-d]');
+  if(d.nw){if(d.moved&&t)addAt(d.nw,Number(t.dataset.d));return}
+  const i=items.find(x=>x.id===d.id);if(!i)return;
+  if(!d.moved){if(d.onTitle){sel=i.id;render();editTitle(i)}else{sel=sel===i.id?null:i.id;render()}return}
+  if(t){const nd=Number(t.dataset.d);if(nd!==i.day){i.day=nd;known.add(ym);render();queueSave()}}}
+document.addEventListener('pointerup',endDrag);document.addEventListener('pointercancel',()=>endDrag(null));
+wrap.addEventListener('keydown',e=>{const el=e.target.closest&&e.target.closest('[data-id]');if(!el)return;const i=items.find(x=>x.id===el.dataset.id);if(!i)return;
+  if(e.key==='Enter'){e.preventDefault();sel=i.id;render();editTitle(i);return}
+  if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();removeItem(i.id);return}
+  const step={ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7}[e.key];if(!step||!i.day)return;e.preventDefault();
+  const{y,m}=parse(ym);const last=new Date(y,m,0).getDate();let nd=i.day+step;
+  while(nd>=1&&nd<=last&&[0,6].includes(new Date(y,m-1,nd).getDay()))nd+=step>0?1:-1;
+  if(nd>=1&&nd<=last){i.day=nd;sel=i.id;render();queueSave();const n=document.querySelector(`[data-id="${i.id}"]`);if(n)n.focus()}});
+
+buildGrid();render();setState('불러오는 중');
+$('saveBtn').onclick=downloadData;
+$('clearBtn').onclick=()=>{if($('clearBtn').dataset.sure){clearLocal()}else{$('clearBtn').dataset.sure='1';$('clearBtn').textContent='한 번 더 누르면 지워져요'}};
+fetch('data/months.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null).then(j=>{
+  if(j&&j.months)base={version:String(j.version||''),months:j.months};
+  mode='local';loadLocal();openMonth(ym);
+});
+})();
+</script>
+</body>
+</html>
