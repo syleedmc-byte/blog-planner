@@ -69,9 +69,12 @@ header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14p
 .sel .ci{box-shadow:0 0 0 3px var(--page),0 0 0 5px var(--focus)}
 .memo.sel{outline:2px solid var(--focus)}
 .bad .ci{box-shadow:0 0 0 3px var(--page),0 0 0 5px var(--bad)}
-.lower{display:block;margin-top:16px;max-width:520px}
+.notes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
 .panel h2{font-size:15px;font-weight:600;margin:0 0 8px}
+.note-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
+.note-card label{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;margin-bottom:8px}
+.note-card textarea{display:block;width:100%;min-height:160px;resize:vertical;border:1px solid var(--line);background:var(--page);color:var(--ink);border-radius:8px;padding:10px 12px;font:inherit;font-size:14px;line-height:1.55;user-select:text}
 .adds{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
 .adds button{display:flex;align-items:center;gap:6px;font-size:13px}
 .palette{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:0 0 12px}
@@ -83,14 +86,13 @@ header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14p
 #edit input,#edit select{width:100%;border:1px solid var(--line);background:var(--page);border-radius:8px;padding:8px 10px}
 .row{display:flex;gap:8px;margin-top:10px}
 .danger{color:var(--bad)}
-#exportBox{width:100%;min-height:150px;margin-top:8px;border:1px solid var(--line);background:var(--page);border-radius:8px;padding:8px;font:13px/1.5 "IBM Plex Sans KR",system-ui,sans-serif;color:var(--ink);resize:vertical}
 .it,.memo{position:relative}
 .x{position:absolute;top:-6px;right:calc(50% - 40px);width:22px;height:22px;border-radius:50%;padding:0;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;background:var(--panel);color:var(--bad);border:1px solid var(--line);z-index:3}
 .tt{cursor:text}
 .ti-in{width:100%;max-width:140px;font-size:12.5px;text-align:center;border:1px solid var(--focus);border-radius:6px;padding:3px 4px;background:var(--panel);color:var(--ink);margin-top:4px;user-select:text}
 .ghost{position:absolute;pointer-events:none;opacity:.85;z-index:20;margin:0}
 @media (max-width:720px){
-  .lower{grid-template-columns:1fr}
+  .notes{grid-template-columns:1fr}
   .cell{min-height:104px;padding:4px 1px 8px}
   .it{width:100%}
   .ci{width:44px;height:44px;font-size:10.5px}
@@ -128,16 +130,14 @@ header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14p
     <div class="wd"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span></div>
     <div class="grid" id="grid"></div>
   </div>
-  <div class="lower">
-    <div class="panel">
-      <h2>노션 등록용 목록</h2>
-      <div class="row" style="margin-top:0"><button id="exportBtn">목록 보기</button></div>
-      <textarea id="exportBox" hidden readonly aria-label="노션 등록용 목록"></textarea>
+  <div class="notes">
+    <div class="note-card">
+      <label for="noteLeft"><i class="dot" style="background:var(--people)"></i>People 메모</label>
+      <textarea id="noteLeft" aria-label="People 관련 메모" placeholder="People 관련 메모를 적어 두세요"></textarea>
     </div>
-    <div class="panel" style="margin-top:12px">
-      <h2>모두에게 반영하기</h2>
-      <p class="hint" style="font-size:13px;color:var(--ink-2);margin:0 0 8px">옮긴 내용은 이 브라우저에만 임시 저장돼요. 다른 사람에게도 보이게 하려면 파일을 받아 저장소의 data 폴더에 덮어쓰고 올리세요.</p>
-      <div class="row" style="margin-top:0"><button id="saveBtn">저장 파일 받기 (months.json)</button><button id="clearBtn">내 변경 지우기</button></div>
+    <div class="note-card">
+      <label for="noteRight"><i class="dot" style="background:var(--trend)"></i>Trend 메모</label>
+      <textarea id="noteRight" aria-label="Trend 관련 메모" placeholder="Trend 관련 메모를 적어 두세요"></textarea>
     </div>
   </div>
 </div>
@@ -185,13 +185,10 @@ function render(){const bad=badIds();
   const tot=items.filter(i=>i.c!=='Memo'&&i.day).length;
   const n={};ORDER.forEach(c=>n[c]=0);items.forEach(i=>{if(i.c!=='Memo'&&i.day&&n[i.c]!==undefined)n[i.c]++});
   $('warn').innerHTML=ORDER.map(c=>`<span class="cnt"><i class="dot" style="background:var(${CATS[c].v})"></i>${c}/${n[c]}</span>`).join('');
-  renderPick();if(!$('exportBox').hidden)fillExport();}
+  renderPick();}
 
 function renderPick(){const ks=new Set(known);ks.add(ym);const list=[...ks].sort();
   $('monthPick').innerHTML=list.map(k=>{const{y,m}=parse(k);return `<option value="${k}" ${k===ym?'selected':''}>${y}년 ${m}월</option>`}).join('');}
-
-function fillExport(){const{y,m}=parse(ym);const rows=items.filter(i=>i.day).sort((a,b)=>a.day-b.day||(a.c==='Memo')-(b.c==='Memo'));
-  $('exportBox').value=`${y}년 ${m}월 블로그 플랜\n`+rows.map(i=>`${m}/${i.day}\t${i.c==='Memo'?'메모':i.c}\t${i.t||''}`).join('\n');}
 
 function setState(t){$('saveState').textContent=t}
 function snapshotJSON(){return JSON.stringify(items.map(({id,c,t,day})=>({id,c,t:t||'',day:day||null})))}
@@ -204,16 +201,15 @@ async function save(){const json=snapshotJSON();if(json===lastSaved){setState(mo
 let base={version:'',months:{}};
 function localEntry(k){try{const v=JSON.parse(localStorage.getItem('plan2:'+k));return v&&v.base===base.version&&Array.isArray(v.items)?v:null}catch(e){return null}}
 function monthItems(k){const l=localEntry(k);if(l)return l.items;return (base.months[k]||[]).map(x=>({...x}))}
-function loadLocal(){items=monthItems(ym);lastSaved=snapshotJSON();
+function noteEntry(k){try{const v=JSON.parse(localStorage.getItem('note2:'+k));return v&&v.base===base.version?v:null}catch(e){return null}}
+function loadNotes(){const l=noteEntry(ym);const b=(base.notes&&base.notes[ym])||{};$('noteLeft').value=(l?l.left:b.left)||'';$('noteRight').value=(l?l.right:b.right)||''}
+let noteTimer=null,notesDirty=false;
+function saveNotes(){notesDirty=false;try{localStorage.setItem('note2:'+ym,JSON.stringify({base:base.version,left:$('noteLeft').value,right:$('noteRight').value}));setState('이 브라우저에 임시 저장됨')}catch(e){setState('저장되지 않는 환경이에요')}}
+['noteLeft','noteRight'].forEach(id=>$(id).addEventListener('input',()=>{notesDirty=true;clearTimeout(noteTimer);setState('저장 중…');noteTimer=setTimeout(saveNotes,500)}));
+function loadLocal(){loadNotes();items=monthItems(ym);lastSaved=snapshotJSON();
   Object.keys(base.months).forEach(k=>{if((base.months[k]||[]).length)known.add(k)});
   try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('plan2:')){const e=localEntry(k.slice(6));if(e&&e.items.length)known.add(k.slice(6))}}}catch(e){}}
-function exportAll(){const keys=new Set(Object.keys(base.months));try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('plan2:'))keys.add(k.slice(6))}}catch(e){}
-  const months={};[...keys].sort().forEach(k=>{const it=k===ym?items:monthItems(k);if(it.length)months[k]=it.map(({id,c,t,day})=>({id,c,t:t||'',day:day||null}))});
-  return JSON.stringify({version:new Date().toISOString(),months},null,1)}
-function downloadData(){const b=new Blob([exportAll()],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='months.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-function clearLocal(){try{Object.keys(localStorage).filter(k=>k.startsWith('plan2:')).forEach(k=>localStorage.removeItem(k))}catch(e){}location.reload()}
-
-function openMonth(k){clearTimeout(saveTimer);if(snapshotJSON()!==lastSaved)save();ym=k;sel=null;items=[];buildGrid();
+function openMonth(k){clearTimeout(saveTimer);if(snapshotJSON()!==lastSaved)save();if(notesDirty){clearTimeout(noteTimer);saveNotes()}ym=k;sel=null;items=[];buildGrid();
   if(mode==='db'){if(unsubMonth)unsubMonth();setState('불러오는 중');
     unsubMonth=db.collection('months').doc(ym).onSnapshot(s=>{const d=s.exists?s.data():null;const incoming=JSON.stringify((d&&Array.isArray(d.items)?d.items:[]).map(({id,c,t,day})=>({id,c,t:t||'',day:day||null})));
       if(incoming===snapshotJSON()&&lastSaved){setState('저장됨');return}
@@ -229,7 +225,6 @@ $('monthPick').onchange=e=>openMonth(e.target.value);
 function addAt(c,day){const it={id:uid(),c,t:c==='Memo'?'새 메모':'새 글',day};items.push(it);known.add(ym);render();queueSave()}
 function firstWeekday(){const{y,m}=parse(ym);for(let d=1;d<=7;d++){const w=new Date(y,m-1,d).getDay();if(w>0&&w<6)return d}return 1}
 document.querySelectorAll('[data-new]').forEach(b=>{b.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();addAt(b.dataset.new,firstWeekday())}})});
-$('exportBtn').onclick=()=>{const b=$('exportBox');b.hidden=!b.hidden;$('exportBtn').textContent=b.hidden?'목록 보기':'목록 닫기';if(!b.hidden){fillExport();b.focus();b.select()}};
 
 const wrap=$('wrap');let drag=null;
 wrap.addEventListener('pointerdown',e=>{if(e.target.closest('.ti-in,.x'))return;const ae=document.activeElement;if(ae&&ae.classList.contains('ti-in'))ae.blur();const el=e.target.closest('[data-id],[data-new]');if(!el||e.button>0)return;e.preventDefault();
@@ -254,8 +249,6 @@ wrap.addEventListener('keydown',e=>{const el=e.target.closest&&e.target.closest(
   if(nd>=1&&nd<=last){i.day=nd;sel=i.id;render();queueSave();const n=document.querySelector(`[data-id="${i.id}"]`);if(n)n.focus()}});
 
 buildGrid();render();setState('불러오는 중');
-$('saveBtn').onclick=downloadData;
-$('clearBtn').onclick=()=>{if($('clearBtn').dataset.sure){clearLocal()}else{$('clearBtn').dataset.sure='1';$('clearBtn').textContent='한 번 더 누르면 지워져요'}};
 fetch('data/months.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null).then(j=>{
   if(j&&j.months)base={version:String(j.version||''),months:j.months};
   mode='local';loadLocal();openMonth(ym);
