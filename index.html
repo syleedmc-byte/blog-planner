@@ -52,7 +52,8 @@ header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14p
 .m b{font-size:22px;font-weight:600}
 .m .g{color:var(--ink-3)}
 .m .s{font-size:12px}
-#warn{font-size:13px;margin:0 0 12px;min-height:20px}
+#warn{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:14px;margin:0 0 12px;min-height:20px;color:var(--ink)}
+.cnt{display:inline-flex;align-items:center;gap:6px;font-variant-numeric:tabular-nums}
 .board{background:var(--board);border-radius:14px;padding:10px 10px 6px}
 .wd,.grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
 .wd span{text-align:center;font-size:15px;padding:2px 0 8px;color:var(--ink)}
@@ -182,7 +183,8 @@ function render(){const bad=badIds();
   document.querySelectorAll('[data-id]').forEach(x=>x.remove());
   items.forEach(i=>{const c=i.day&&$('grid').querySelector(`[data-d="${i.day}"]`);if(c)c.appendChild(node(i,bad))});
   const tot=items.filter(i=>i.c!=='Memo'&&i.day).length;
-  $('warn').innerHTML='';
+  const n={};ORDER.forEach(c=>n[c]=0);items.forEach(i=>{if(i.c!=='Memo'&&i.day&&n[i.c]!==undefined)n[i.c]++});
+  $('warn').innerHTML=ORDER.map(c=>`<span class="cnt"><i class="dot" style="background:var(${CATS[c].v})"></i>${c}/${n[c]}</span>`).join('');
   renderPick();if(!$('exportBox').hidden)fillExport();}
 
 function renderPick(){const ks=new Set(known);ks.add(ym);const list=[...ks].sort();
