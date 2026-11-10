@@ -93,15 +93,13 @@ header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14p
 .ghost{position:absolute;pointer-events:none;opacity:.85;z-index:20;margin:0}
 .tt.sz-s,.memo.sz-s{font-size:11px}
 .tt.sz-l,.memo.sz-l{font-size:15px}
-.stylebar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 14px;margin:0 0 12px}
-.stylebar .lab{font-size:13px;color:var(--ink-2)}
-.stylebar .grp{display:flex;align-items:center;gap:6px}
-.stylebar button{min-width:34px;height:32px;padding:0 10px;font-size:13px}
+.stylebar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-left:auto;padding-left:14px;border-left:1px solid var(--line)}
+.stylebar .grp{display:flex;align-items:center;gap:5px}
+.stylebar button{min-width:30px;height:28px;padding:0 8px;font-size:12px}
 .stylebar button.on,.stylebar button[aria-pressed="true"]{border-color:var(--focus);box-shadow:0 0 0 1px var(--focus)}
 .stylebar button:disabled{opacity:.4;cursor:default}
-.stylebar .swb{width:26px;height:26px;min-width:26px;padding:0;border-radius:50%;border:2px solid var(--panel);box-shadow:0 0 0 1px var(--line)}
+.stylebar .swb{width:22px;height:22px;min-width:22px;padding:0;border-radius:50%;border:2px solid var(--panel);box-shadow:0 0 0 1px var(--line)}
 .stylebar .swb.on{box-shadow:0 0 0 2px var(--focus)}
-#sbHint{font-size:13px;color:var(--ink-3);margin-left:auto}
 @media (max-width:720px){
   .tt.sz-s,.memo.sz-s{font-size:10px}
   .tt.sz-l,.memo.sz-l{font-size:13px}
@@ -137,13 +135,11 @@ header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14p
     <button class="pc" data-new="About" style="background:var(--about);color:var(--about-ink)">About</button>
     <button class="pc" data-new="Data" style="background:var(--data);color:var(--data-ink)">Data</button>
     <button class="pm" data-new="Memo">메모</button>
-  </div>
-  <div class="stylebar" id="stylebar" aria-label="선택한 글자 꾸미기">
-    <span class="lab">글자 꾸미기</span>
-    <div class="grp"><button id="sbBold" aria-pressed="false" aria-label="굵게"><b>B</b></button></div>
-    <div class="grp" id="sbColors" role="group" aria-label="글자 색"></div>
-    <div class="grp" id="sbSizes" role="group" aria-label="글자 크기"><button data-s="s">작게</button><button data-s="">보통</button><button data-s="l">크게</button></div>
-    <span id="sbHint"></span>
+    <div class="stylebar" id="stylebar" role="group" aria-label="선택한 글자 꾸미기" title="동그라미나 제목을 눌러 선택하면 글자를 꾸밀 수 있어요">
+      <div class="grp"><button id="sbBold" aria-pressed="false" aria-label="굵게" title="굵게"><b>B</b></button><button id="sbStrike" aria-pressed="false" aria-label="줄 긋기" title="줄 긋기"><s>S</s></button></div>
+      <div class="grp" id="sbColors" role="group" aria-label="글자 색"></div>
+      <div class="grp" id="sbSizes" role="group" aria-label="글자 크기"><button data-s="s">작게</button><button data-s="">보통</button><button data-s="l">크게</button></div>
+    </div>
   </div>
   <div id="warn" aria-live="polite"></div>
   <div class="board">
@@ -186,8 +182,8 @@ function badIds(){return new Set()}
 
 const HEX=/^#[0-9a-f]{6}$/i;
 const COLORS=[['#262624','진하게'],['#E5484D','빨강'],['#F08A00','주황'],['#3FA34D','초록'],['#3B82F6','파랑'],['#A66BE0','보라']];
-function pack(i){const o={id:i.id,c:i.c,t:i.t||'',day:i.day||null};if(i.b)o.b=1;if(i.k&&HEX.test(i.k))o.k=i.k;if(i.s==='s'||i.s==='l')o.s=i.s;return o}
-function txt(el,i){if(i.b)el.style.fontWeight='700';if(i.k&&HEX.test(i.k))el.style.color=i.k;if(i.s==='s'||i.s==='l')el.classList.add('sz-'+i.s)}
+function pack(i){const o={id:i.id,c:i.c,t:i.t||'',day:i.day||null};if(i.b)o.b=1;if(i.d)o.d=1;if(i.k&&HEX.test(i.k))o.k=i.k;if(i.s==='s'||i.s==='l')o.s=i.s;return o}
+function txt(el,i){if(i.b)el.style.fontWeight='700';if(i.d)el.style.textDecoration='line-through';if(i.k&&HEX.test(i.k))el.style.color=i.k;if(i.s==='s'||i.s==='l')el.classList.add('sz-'+i.s)}
 function node(i,bad){const e=document.createElement('div');e.dataset.id=i.id;e.tabIndex=0;
   const xb=()=>{const b=document.createElement('button');b.className='x';b.setAttribute('aria-label','삭제');b.textContent='×';b.onclick=ev=>{ev.stopPropagation();removeItem(i.id)};return b};
   if(i.c==='Memo'){e.className='memo'+(sel===i.id?' sel':'');e.textContent=i.t||'메모';txt(e,i);if(sel===i.id)e.appendChild(xb());return e}
@@ -217,10 +213,11 @@ function updateBar(){const i=items.find(x=>x.id===sel);
   $('sbBold').setAttribute('aria-pressed',i&&i.b?'true':'false');
   document.querySelectorAll('#sbColors button').forEach(b=>b.classList.toggle('on',!!i&&(i.k||'')===b.dataset.k));
   document.querySelectorAll('#sbSizes button').forEach(b=>b.classList.toggle('on',!!i&&(i.s||'')===b.dataset.s));
-  $('sbHint').textContent=i?'':'동그라미나 제목을 눌러 선택하면 바꿀 수 있어요'}
+  $('sbStrike').setAttribute('aria-pressed',i&&i.d?'true':'false')}
 function setStyle(fn){const i=items.find(x=>x.id===sel);if(!i)return;fn(i);render();queueSave()}
 $('sbColors').innerHTML='<button data-k="">기본색</button>'+COLORS.map(([k,n])=>`<button class="swb" data-k="${k}" style="background:${k}" aria-label="${n}" title="${n}"></button>`).join('');
 $('sbBold').onclick=()=>setStyle(i=>{if(i.b)delete i.b;else i.b=1});
+$('sbStrike').onclick=()=>setStyle(i=>{if(i.d)delete i.d;else i.d=1});
 $('sbColors').onclick=e=>{const b=e.target.closest('button');if(!b)return;setStyle(i=>{if(b.dataset.k)i.k=b.dataset.k;else delete i.k})};
 $('sbSizes').onclick=e=>{const b=e.target.closest('button');if(!b)return;setStyle(i=>{if(b.dataset.s)i.s=b.dataset.s;else delete i.s})};
 
