@@ -10,7 +10,7 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='6' width='56' height='54' rx='9' fill='%238E9AAF'/%3E%3Crect x='8' y='22' width='48' height='34' rx='5' fill='%23FFFFFF'/%3E%3Crect x='17.5' y='2' width='5' height='11' rx='2.5' fill='%23FFFFFF' stroke='%238E9AAF' stroke-width='1.6'/%3E%3Crect x='41.5' y='2' width='5' height='11' rx='2.5' fill='%23FFFFFF' stroke='%238E9AAF' stroke-width='1.6'/%3E%3Ccircle cx='18' cy='32' r='5.6' fill='%237DBB2E'/%3E%3Ccircle cx='32' cy='32' r='5.6' fill='%23F4A21A'/%3E%3Ccircle cx='46' cy='32' r='5.6' fill='%23F2A3CC'/%3E%3Ccircle cx='18' cy='46' r='5.6' fill='%232F5422'/%3E%3Ccircle cx='32' cy='46' r='5.6' fill='%232F7BD9'/%3E%3Ccircle cx='46' cy='46' r='5.6' fill='%237DBB2E'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --page:#F6F6F4; --board:#E9E9E6; --cell-line:#DADAD6; --ink:#262624; --ink-2:#6B6B66; --ink-3:#A3A39D;
@@ -91,7 +91,20 @@ header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14p
 .tt{cursor:text}
 .ti-in{width:100%;max-width:140px;font-size:12.5px;text-align:center;border:1px solid var(--focus);border-radius:6px;padding:3px 4px;background:var(--panel);color:var(--ink);margin-top:4px;user-select:text}
 .ghost{position:absolute;pointer-events:none;opacity:.85;z-index:20;margin:0}
+.tt.sz-s,.memo.sz-s{font-size:11px}
+.tt.sz-l,.memo.sz-l{font-size:15px}
+.stylebar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 14px;margin:0 0 12px}
+.stylebar .lab{font-size:13px;color:var(--ink-2)}
+.stylebar .grp{display:flex;align-items:center;gap:6px}
+.stylebar button{min-width:34px;height:32px;padding:0 10px;font-size:13px}
+.stylebar button.on,.stylebar button[aria-pressed="true"]{border-color:var(--focus);box-shadow:0 0 0 1px var(--focus)}
+.stylebar button:disabled{opacity:.4;cursor:default}
+.stylebar .swb{width:26px;height:26px;min-width:26px;padding:0;border-radius:50%;border:2px solid var(--panel);box-shadow:0 0 0 1px var(--line)}
+.stylebar .swb.on{box-shadow:0 0 0 2px var(--focus)}
+#sbHint{font-size:13px;color:var(--ink-3);margin-left:auto}
 @media (max-width:720px){
+  .tt.sz-s,.memo.sz-s{font-size:10px}
+  .tt.sz-l,.memo.sz-l{font-size:13px}
   .notes{grid-template-columns:1fr}
   .cell{min-height:104px;padding:4px 1px 8px}
   .it{width:100%}
@@ -124,6 +137,13 @@ header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14p
     <button class="pc" data-new="About" style="background:var(--about);color:var(--about-ink)">About</button>
     <button class="pc" data-new="Data" style="background:var(--data);color:var(--data-ink)">Data</button>
     <button class="pm" data-new="Memo">메모</button>
+  </div>
+  <div class="stylebar" id="stylebar" aria-label="선택한 글자 꾸미기">
+    <span class="lab">글자 꾸미기</span>
+    <div class="grp"><button id="sbBold" aria-pressed="false" aria-label="굵게"><b>B</b></button></div>
+    <div class="grp" id="sbColors" role="group" aria-label="글자 색"></div>
+    <div class="grp" id="sbSizes" role="group" aria-label="글자 크기"><button data-s="s">작게</button><button data-s="">보통</button><button data-s="l">크게</button></div>
+    <span id="sbHint"></span>
   </div>
   <div id="warn" aria-live="polite"></div>
   <div class="board">
@@ -164,13 +184,17 @@ function buildGrid(){const{y,m}=parse(ym);$('title').textContent=y+'년 '+m+'월
 
 function badIds(){return new Set()}
 
+const HEX=/^#[0-9a-f]{6}$/i;
+const COLORS=[['#262624','진하게'],['#E5484D','빨강'],['#F08A00','주황'],['#3FA34D','초록'],['#3B82F6','파랑'],['#A66BE0','보라']];
+function pack(i){const o={id:i.id,c:i.c,t:i.t||'',day:i.day||null};if(i.b)o.b=1;if(i.k&&HEX.test(i.k))o.k=i.k;if(i.s==='s'||i.s==='l')o.s=i.s;return o}
+function txt(el,i){if(i.b)el.style.fontWeight='700';if(i.k&&HEX.test(i.k))el.style.color=i.k;if(i.s==='s'||i.s==='l')el.classList.add('sz-'+i.s)}
 function node(i,bad){const e=document.createElement('div');e.dataset.id=i.id;e.tabIndex=0;
   const xb=()=>{const b=document.createElement('button');b.className='x';b.setAttribute('aria-label','삭제');b.textContent='×';b.onclick=ev=>{ev.stopPropagation();removeItem(i.id)};return b};
-  if(i.c==='Memo'){e.className='memo'+(sel===i.id?' sel':'');e.textContent=i.t||'메모';if(sel===i.id)e.appendChild(xb());return e}
+  if(i.c==='Memo'){e.className='memo'+(sel===i.id?' sel':'');e.textContent=i.t||'메모';txt(e,i);if(sel===i.id)e.appendChild(xb());return e}
   const c=CATS[i.c]||CATS.Trend;const{m}=parse(ym);
   e.className='it'+(sel===i.id?' sel':'')+(bad.has(i.id)?' bad':'');
   e.innerHTML=`<div class="ci" style="background:var(${c.v});color:var(${c.ink})">${i.day?`<small>${m}/${i.day}</small>`:''}${i.c}</div><div class="tt"></div>`;
-  e.querySelector('.tt').textContent=i.t||'새 글';e.setAttribute('aria-label',`${i.c} ${i.t||''}`);if(sel===i.id)e.appendChild(xb());return e}
+  const tt=e.querySelector('.tt');tt.textContent=i.t||'새 글';txt(tt,i);e.setAttribute('aria-label',`${i.c} ${i.t||''}`);if(sel===i.id)e.appendChild(xb());return e}
 function removeItem(id){items=items.filter(x=>x.id!==id);if(sel===id)sel=null;render();queueSave()}
 function editTitle(i){const el=document.querySelector(`[data-id="${i.id}"]`);if(!el)return;const memo=i.c==='Memo';
   const inp=document.createElement('input');inp.className='ti-in';inp.maxLength=80;inp.value=i.t&&!['새 글','새 메모'].includes(i.t)?i.t:'';inp.setAttribute('aria-label','제목');
@@ -185,13 +209,26 @@ function render(){const bad=badIds();
   const tot=items.filter(i=>i.c!=='Memo'&&i.day).length;
   const n={};ORDER.forEach(c=>n[c]=0);items.forEach(i=>{if(i.c!=='Memo'&&i.day&&n[i.c]!==undefined)n[i.c]++});
   $('warn').innerHTML=ORDER.map(c=>`<span class="cnt"><i class="dot" style="background:var(${CATS[c].v})"></i>${c}/${n[c]}</span>`).join('');
-  renderPick();}
+  renderPick();updateBar();}
+
+const sbBtns=()=>document.querySelectorAll('#stylebar button');
+function updateBar(){const i=items.find(x=>x.id===sel);
+  sbBtns().forEach(b=>b.disabled=!i);
+  $('sbBold').setAttribute('aria-pressed',i&&i.b?'true':'false');
+  document.querySelectorAll('#sbColors button').forEach(b=>b.classList.toggle('on',!!i&&(i.k||'')===b.dataset.k));
+  document.querySelectorAll('#sbSizes button').forEach(b=>b.classList.toggle('on',!!i&&(i.s||'')===b.dataset.s));
+  $('sbHint').textContent=i?'':'동그라미나 제목을 눌러 선택하면 바꿀 수 있어요'}
+function setStyle(fn){const i=items.find(x=>x.id===sel);if(!i)return;fn(i);render();queueSave()}
+$('sbColors').innerHTML='<button data-k="">기본색</button>'+COLORS.map(([k,n])=>`<button class="swb" data-k="${k}" style="background:${k}" aria-label="${n}" title="${n}"></button>`).join('');
+$('sbBold').onclick=()=>setStyle(i=>{if(i.b)delete i.b;else i.b=1});
+$('sbColors').onclick=e=>{const b=e.target.closest('button');if(!b)return;setStyle(i=>{if(b.dataset.k)i.k=b.dataset.k;else delete i.k})};
+$('sbSizes').onclick=e=>{const b=e.target.closest('button');if(!b)return;setStyle(i=>{if(b.dataset.s)i.s=b.dataset.s;else delete i.s})};
 
 function renderPick(){const ks=new Set(known);ks.add(ym);const list=[...ks].sort();
   $('monthPick').innerHTML=list.map(k=>{const{y,m}=parse(k);return `<option value="${k}" ${k===ym?'selected':''}>${y}년 ${m}월</option>`}).join('');}
 
 function setState(t){$('saveState').textContent=t}
-function snapshotJSON(){return JSON.stringify(items.map(({id,c,t,day})=>({id,c,t:t||'',day:day||null})))}
+function snapshotJSON(){return JSON.stringify(items.map(pack))}
 function queueSave(){clearTimeout(saveTimer);setState('저장 중…');saveTimer=setTimeout(save,700)}
 async function save(){const json=snapshotJSON();if(json===lastSaved){setState(mode==='db'?'저장됨':'이 브라우저에 임시 저장됨');return}
   if(mode==='db'){try{await db.collection('months').doc(ym).set({items:JSON.parse(json),updatedAt:new Date().toISOString()});lastSaved=json;setState('저장됨')}
@@ -211,7 +248,7 @@ function loadLocal(){loadNotes();items=monthItems(ym);lastSaved=snapshotJSON();
   try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('plan2:')){const e=localEntry(k.slice(6));if(e&&e.items.length)known.add(k.slice(6))}}}catch(e){}}
 function openMonth(k){clearTimeout(saveTimer);if(snapshotJSON()!==lastSaved)save();if(notesDirty){clearTimeout(noteTimer);saveNotes()}ym=k;sel=null;items=[];buildGrid();
   if(mode==='db'){if(unsubMonth)unsubMonth();setState('불러오는 중');
-    unsubMonth=db.collection('months').doc(ym).onSnapshot(s=>{const d=s.exists?s.data():null;const incoming=JSON.stringify((d&&Array.isArray(d.items)?d.items:[]).map(({id,c,t,day})=>({id,c,t:t||'',day:day||null})));
+    unsubMonth=db.collection('months').doc(ym).onSnapshot(s=>{const d=s.exists?s.data():null;const incoming=JSON.stringify((d&&Array.isArray(d.items)?d.items:[]).map(pack));
       if(incoming===snapshotJSON()&&lastSaved){setState('저장됨');return}
       if(drag||(document.activeElement&&document.activeElement.classList.contains('ti-in')))return;
       items=JSON.parse(incoming);lastSaved=incoming;if(!items.find(x=>x.id===sel))sel=null;render();setState('저장됨')},
